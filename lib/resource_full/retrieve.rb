@@ -38,20 +38,24 @@ module ResourceFull
       end
     end
 
+    def model_params
+      params[model_name]
+    end
+
     def update_model_object
-      object = find_model_object
-      object.update_attributes(params[model_name])
-      object
+      returning(find_model_object) do |object|
+        object.update_attributes(model_params)
+      end
     end
 
     def create_model_object
-      model_class.create(params[model_name])
+      model_class.create(model_params)
     end
 
     def destroy_model_object
-      object = find_model_object
-      object.destroy
-      object
+      returning(find_model_object) do |object|
+        object.destroy
+      end
     end
 
     def find_all_model_objects
@@ -65,7 +69,7 @@ module ResourceFull
     def move_queryable_params_into_model_params_on_create
       params.except(model_name).each do |param_name, value|
         if self.class.queryable_params.collect(&:name).include?(param_name.to_sym)
-          params[model_name][param_name] = params.delete(param_name)
+          model_params[param_name] = params.delete(param_name)
         end
       end
     end
