@@ -39,7 +39,7 @@ module ResourceFull
     end
 
     def model_params
-      params[model_name]
+      params[model_name] ||= {}
     end
 
     def update_model_object
