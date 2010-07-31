@@ -269,7 +269,7 @@ describe "ResourceFull::Render::JSON", :type => :controller do
 
     it "renders appropriate errors if a generic error is raised" do
       mock_user = ResourceFullMockUser.create!
-      ResourceFullMockUser.any_instance.expects(:destroy).raises SomeNonsenseException, "sparrow farts"
+      ResourceFullMockUser.any_instance.expects(:destroy).raises(SomeNonsenseException, "sparrow farts")
 
       delete :destroy, :id => mock_user.id.to_s, :format => 'json'
 
@@ -277,8 +277,6 @@ describe "ResourceFull::Render::JSON", :type => :controller do
       hash = Hash.from_json(response.body)
       hash["error"]["text"].should == "sparrow farts"
     end
-
-    it "renders error if the model could not be destroyed"
   end
 
   if ([Rails::VERSION::MAJOR, Rails::VERSION::MINOR] <=> [2,1]) >= 0 # if the rails version is 2.1 or greater...

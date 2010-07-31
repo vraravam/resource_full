@@ -78,7 +78,12 @@ end
 
 class ResourceFullMockUser < ActiveRecord::Base
   belongs_to :resource_full_mock_employer
-  has_many :resource_full_mock_addresses
+  has_many :resource_full_mock_addresses, :dependent => :delete_all
+
+  # retrieve_spec custom methods spec, approx. lines 100 & 131
+  def create_address
+    ResourceFullMockAddress.create!
+  end
 end
 
 class ResourceFullMockSubUser < ResourceFullMockUser

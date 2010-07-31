@@ -18,14 +18,16 @@ module ResourceFull
 
     private
 
-    CONFLICT_MESSAGE = if defined?(ActiveRecord::Errors)
-      if ActiveRecord::VERSION::STRING >= '2.1.0' && defined?(I18n)
-        (I18n.translate 'activerecord.errors.messages')[:taken]
+    silence_warnings do
+      CONFLICT_MESSAGE = if defined?(ActiveRecord::Errors)
+        if ActiveRecord::VERSION::STRING >= '2.1.0' && defined?(I18n)
+          (I18n.translate 'activerecord.errors.messages')[:taken]
+        else
+          ActiveRecord::Errors.default_error_messages[:taken]
+        end
       else
-        ActiveRecord::Errors.default_error_messages[:taken]
+        "has already been taken"
       end
-    else
-      "has already been taken"
     end
 
     def handle_generic_exception_with_correct_response_format(exception)

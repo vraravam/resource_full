@@ -5,6 +5,7 @@ describe "ResourceFull::Retrieve", :type => :controller do
 
   before :each do
     ResourceFullMockUser.delete_all
+    ResourceFullMockAddress.delete_all
     ResourceFullMockUsersController.resource_identifier = :id
     ResourceFullMockUsersController.queryable_params = []
   end
@@ -80,37 +81,60 @@ describe "ResourceFull::Retrieve", :type => :controller do
   describe "update" do
     it "updates the requested model object based on the given parameters" do
       user = ResourceFullMockUser.create! :last_name => "threepwood"
-      post :update, :id => user.id, :resource_full_mock_user => { :last_name => "guybrush" }
+      put :update, :id => user.id, :resource_full_mock_user => { :last_name => "guybrush" }
       user.reload.last_name.should == "guybrush"
     end
 
     it "updates the requested model object using the correct column if the resource_identifier attribute has been overridden" do
       ResourceFullMockUsersController.resource_identifier = :first_name
       user = ResourceFullMockUser.create! :first_name => "guybrush"
-      post :update, :id => "guybrush", :resource_full_mock_user => { :last_name => "threepwood" }
+      put :update, :id => "guybrush", :resource_full_mock_user => { :last_name => "threepwood" }
       user.reload.last_name.should == "threepwood"
     end
 
-    it "should perform the actions in a transaction (in case the update on the model creates associated/child objects)"
+    it "should perform the actions in a transaction (in case the update on the model creates associated/child objects)" do
+      user = ResourceFullMockUser.create! :last_name => "threepwood"
+      user_count = ResourceFullMockUser.count
+      address_count = ResourceFullMockAddress.count
+      ResourceFullMockAddress.expects(:create!).raises(Exception)
+      ResourceFullMockUser.send(:before_update, :create_address)
+      lambda {
+        put :update, :id => user.id, :resource_full_mock_user => { :last_name => "guybrush" }
+      }.should raise_error(Exception)
+      ResourceFullMockUser.count.should == user_count
+      ResourceFullMockAddress.count.should == address_count
+    end
   end
 
   describe "create" do
     it "creates a new model object based on the given parameters" do
-      put :create, :resource_full_mock_user => { :first_name => "guybrush", :last_name => "threepwood" }
-      ResourceFullMockUser.count.should == 1
+      user_count = ResourceFullMockUser.count
+      post :create, :resource_full_mock_user => { :first_name => "guybrush", :last_name => "threepwood" }
+      ResourceFullMockUser.count.should == user_count + 1
       ResourceFullMockUser.find(:first).first_name.should == "guybrush"
     end
 
     it "creates a new model object appropriately if a creational parameter is queryable but not placed in the model object params, as with a nested route" do
+      user_count = ResourceFullMockUser.count
       ResourceFullMockUsersController.queryable_with :first_name
-      put :create, :first_name => "guybrush", :resource_full_mock_user => { :last_name => "threepwood" }
-      ResourceFullMockUser.count.should == 1
+      post :create, :first_name => "guybrush", :resource_full_mock_user => { :last_name => "threepwood" }
+      ResourceFullMockUser.count.should == user_count + 1
       user = ResourceFullMockUser.find :first
       user.first_name.should == "guybrush"
       user.last_name.should == "threepwood"
     end
 
-    it "should perform the actions in a transaction (in case the create on the model creates associated/child objects)"
+    it "should perform the actions in a transaction (in case the create on the model creates associated/child objects)" do
+      user_count = ResourceFullMockUser.count
+      address_count = ResourceFullMockAddress.count
+      ResourceFullMockAddress.expects(:create!).raises(Exception)
+      ResourceFullMockUser.send(:before_create, :create_address)
+      lambda {
+        post :create, :resource_full_mock_user => { :first_name => "guybrush", :last_name => "threepwood" }
+      }.should raise_error(Exception)
+      ResourceFullMockUser.count.should == user_count
+      ResourceFullMockAddress.count.should == address_count
+    end
   end
 
   describe "destroy" do
@@ -127,7 +151,15 @@ describe "ResourceFull::Retrieve", :type => :controller do
       ResourceFullMockUser.exists?(user.id).should be_false
     end
 
-    it "should perform the actions in a transaction (in case the destroy on the model destroys associated/child objects)"
+    it "should perform the actions in a transaction (in case the destroy on the model destroys associated/child objects)" do
+      user = ResourceFullMockUser.create!
+      user.resource_full_mock_addresses.create!
+      ResourceFullMockAddress.expects(:delete_all).raises(Exception)
+      lambda {
+        delete :destroy, :id => user.id
+      }.should raise_error(Exception)
+      ResourceFullMockUser.exists?(user.id).should be_true
+    end
   end
 
   describe "with pagination" do

@@ -13,8 +13,9 @@ module ResourceFull
       end
 
       def to_json(options = {})
-        {"error" => {:text => self.to_s,
-                     :backtrace => self.backtrace}}.to_json
+        hash = {:text => self.to_s}
+        hash[:backtrace] = self.backtrace if options[:include_backtrace] == true
+        {"error" => hash}.to_json
       end
     end
   end

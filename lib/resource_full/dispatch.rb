@@ -11,14 +11,16 @@ module ResourceFull
     end
 
     module ClassMethods
-      DEFAULT_FORMATS = [ :xml, :html, :json ]
+      silence_warnings do
+        DEFAULT_FORMATS = [ :xml, :html, :json ]
 
-      CRUD_METHODS_TO_ACTIONS = {
-        :create => [ :create, :new ],
-        :read   => [ :show, :index, :count ],
-        :update => [ :update, :edit ],
-        :delete => [ :destroy ]
-      }
+        CRUD_METHODS_TO_ACTIONS = {
+          :create => [ :create, :new ],
+          :read   => [ :show, :index, :count ],
+          :update => [ :update, :edit ],
+          :delete => [ :destroy ]
+        }
+      end
 
       # usage:
       # register_action :index, :format => [:xml, :json]

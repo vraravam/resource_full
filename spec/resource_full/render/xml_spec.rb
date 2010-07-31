@@ -380,8 +380,6 @@ describe "ResourceFull::Render::XML" , :type => :controller do
         response.code.should == '500'
         response.should have_tag("errors") { with_tag("error", "sparrow farts") }
       end
-
-      it "renders error if the model could not be destroyed"
     end
   end
 end
