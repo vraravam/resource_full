@@ -10,7 +10,7 @@ module Spec
           @target = target
 
           actual_attribute = @target.class.resource_identifier
-          # TODO: Does not handle the case when its not a Proc
+          # TODO: Does not handle the case when its not a Proc 
           if !actual_attribute.nil? && actual_attribute.is_a?(Proc)
             actual_attribute = actual_attribute.call("ABC12")
           end
