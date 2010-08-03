@@ -17,3 +17,4 @@ Rcov::RcovTask.new do |t|
   t.rcov_opts = [ "--spec-only" ]
   t.output_dir = "coverage"
 end
+

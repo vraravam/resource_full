@@ -1,13 +1,13 @@
 = ResourceFull
 
 ResourceFull provides a fully-compliant ActiveResource server implementation
-built on ActionController. Additionally, it provides RESTful parameter 
-queryability, paging, sorting, separation of controller concerns, multiple 
-formats (HTML, XML, JSON), CRUD access permissions, and API metadata 
-surrounding the resource itself. It's opinionated but is intended to provide 
+built on ActionController. Additionally, it provides RESTful parameter
+queryability, paging, sorting, separation of controller concerns, multiple
+formats (HTML, XML, JSON), CRUD access permissions, and API metadata
+surrounding the resource itself. It's opinionated but is intended to provide
 you with as much as possible without limiting your ability to customize its
-behavior. Unless overridden, it uses Rails' default to_xml and to_json methods 
-to provide object serialization, which ActiveResource expects but many REST 
+behavior. Unless overridden, it uses Rails' default to_xml and to_json methods
+to provide object serialization, which ActiveResource expects but many REST
 clients will not.
 
 == GOALS
@@ -28,26 +28,38 @@ The major distinguishing features of ResourceFull are:
   descriptors.)  It's my hope that this can eventually be consumed by a Rails
   resource registrar that acts as the single source of record for multiple REST
   engines within an organization.
+* Rspec Style Matchers: matchers for the functionality that resource_full provides
+  are present in the library - so that your tests can be written in a DRY manner.
 
 == EXAMPLE
 
   class UsersController < ResourceFull::Base
     identified_by :username, :unless => lambda { |id| id =~ /^[0-9]+$/ }
-    
+
     queryable_with :city, :state, :from => :address
     queryable_with :name, :columns => [:first_name, :last_name]
     queryable_with :email_address, :fuzzy => true
     queryable_with :is_active, :scope => :active
 
     orderable_by :city, :from => :address
-    
+
     responds_to :html
     responds_to :xml, :only => [:read, :update]
   end
-  
+
   class AddressesController < ResourceFull::Base
     nests_within :users
     queryable_with :city, :state
+  end
+
+  describe UsersControllerSpec do
+    it "should expose User model" do
+      controller.should expose(::User)
+    end
+
+    it "should be identified by city" do
+      controller.should be_identified_by(:city)
+    end
   end
 
 This allows for the following:
@@ -64,7 +76,7 @@ This allows for the following:
 
 == API DOCUMENTATION
 
-To enable ResourceFull to document your resources at /resources.xml and /resources/<name>/routes.xml, 
+To enable ResourceFull to document your resources at /resources.xml and /resources/<name>/routes.xml,
 add +map.api+ to your +routes.rb+ file.
 
 == CONTRIBUTORS

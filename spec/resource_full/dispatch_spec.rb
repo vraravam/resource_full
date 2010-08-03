@@ -176,8 +176,8 @@ describe "ResourceFull::Dispatch", :type => :controller do
 
     it "sets an @mocks instance variable appropriately if the default finder is overridden" do
       controller.stubs(:find_all_model_objects).returns "another list of mocks"
-      get :index, :format => 'html'
-      assigns(:resource_full_mocks).should == "another list of mocks"
+        get :index, :format => 'html'
+        assigns(:resource_full_mocks).should == "another list of mocks"
     end
   end
 

@@ -1,3 +1,4 @@
+require 'spec/resource_full/matcher/expose_matcher'
 require 'spec/resource_full/matcher/identified_by_matcher'
 
 module Spec
