@@ -170,7 +170,7 @@ describe "ResourceFull::Render::JSON", :type => :controller do
         put :create, :resource_full_mock_user => {}, :format => 'json'
 
         hash = Hash.from_json(response.body)
-        hash["resource_full_mock_user"]["errors"]["full_messages"][0].should == "First name can't be blank"
+        hash["resource_full_mock_user"]["errors"]["full_messages"][0].should =~ /First name can't be blank/
       ensure
         ResourceFullMockUser.send :remove_method, :validate
       end
@@ -216,7 +216,8 @@ describe "ResourceFull::Render::JSON", :type => :controller do
 
         response.code.should == '422'
         hash = Hash.from_json(response.body)
-        hash["resource_full_mock_user"]["errors"]["full_messages"].should == ["First name can't be blank"]
+        hash["resource_full_mock_user"]["errors"]["full_messages"].size.should == 1
+        hash["resource_full_mock_user"]["errors"]["full_messages"].first.should =~ /First name can't be blank/
       ensure
         ResourceFullMockUser.send :remove_method, :validate
       end
@@ -261,7 +262,7 @@ describe "ResourceFull::Render::JSON", :type => :controller do
 
         response.code.should == '422'
         hash = Hash.from_json(response.body)
-        hash["error"]["text"].should == "Validation failed: Cannot delete"
+        hash["error"]["text"].should =~ /Cannot delete/
       ensure
         ResourceFullMockUser.send :remove_method, :destroy
       end

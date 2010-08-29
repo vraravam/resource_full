@@ -281,7 +281,7 @@ describe "ResourceFull::Render::XML" , :type => :controller do
           put :create, :resource_full_mock_user => {}, :format => 'xml'
 
           response.code.should == '422'
-          response.should have_tag("errors") { with_tag("error", "First name can't be blank")}
+          response.should have_tag("errors") { with_tag("error", /First name can't be blank/)}
         ensure
           ResourceFullMockUser.send :remove_method, :validate
         end
@@ -324,7 +324,7 @@ describe "ResourceFull::Render::XML" , :type => :controller do
           put :update, :id => mock_user.id.to_s, :resource_full_mock_user => {:first_name => ''}, :format => 'xml'
 
           response.code.should == '422'
-          response.should have_tag("errors") { with_tag("error", "First name can't be blank")}
+          response.should have_tag("errors") { with_tag("error", /First name can't be blank/)}
         ensure
           ResourceFullMockUser.send :remove_method, :validate
         end
@@ -366,7 +366,7 @@ describe "ResourceFull::Render::XML" , :type => :controller do
           delete :destroy, :id => mock_user.id.to_s, :format => 'xml'
 
           response.code.should == '422'
-          response.should have_tag("errors") { with_tag("error", "Validation failed: Cannot delete") }
+          response.should have_tag("errors") { with_tag("error", /Cannot delete/) }
         ensure
           ResourceFullMockUser.send :remove_method, :destroy
         end
