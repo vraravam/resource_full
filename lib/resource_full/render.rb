@@ -44,7 +44,7 @@ module ResourceFull
              request, data)
         end
         logger.error exception.message + "\n" + exception.clean_backtrace.collect {|s| "\t#{s}\n"}.join
-        render :xml => exception.to_xml, :status => :server_error
+        render :xml => exception.to_xml, :status => :internal_server_error
       elsif request.format.json?
         if defined?(ExceptionNotifiable) && defined?(ExceptionNotifier) && self.is_a?(ExceptionNotifiable) && !(consider_all_requests_local || local_request?)
           deliverer = self.class.exception_data
@@ -58,7 +58,7 @@ module ResourceFull
              request, data)
         end
         logger.error exception.message + "\n" + exception.clean_backtrace.collect {|s| "\t#{s}\n"}.join
-        render :json => exception.to_json, :status => :server_error
+        render :json => exception.to_json, :status => :internal_server_error
       else
         raise exception
       end

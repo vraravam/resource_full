@@ -9,8 +9,8 @@ module ResourceFull
       def show_xml
         self.model_object = self.find_model_object
         render :xml => model_object.to_xml({:root => model_name}.merge(show_xml_options))
-      rescue ActiveRecord::RecordNotFound => e
-        render :xml => e.to_xml, :status => :not_found
+      rescue ActiveRecord::RecordNotFound, ActiveResource::ResourceNotFound => e
+        handle_not_found_error_in_xml(e)
       rescue => e
         handle_generic_error_in_xml(e)
       end
@@ -78,8 +78,10 @@ module ResourceFull
         else
           render :xml => model_object.errors.to_xml, :status => http_error_code_for(model_object.errors)
         end
-      rescue ActiveRecord::RecordNotFound => e
-        render :xml => e.to_xml, :status => :not_found
+      rescue ActiveRecord::RecordNotFound, ActiveResource::ResourceNotFound => e
+        handle_not_found_error_in_xml(e)
+      rescue ActiveRecord::RecordInvalid, ActiveResource::ResourceInvalid => e
+        handle_invalid_error_in_xml(e)
       rescue => e
         handle_generic_error_in_xml(e)
       end
@@ -91,15 +93,25 @@ module ResourceFull
         else
           render :xml => model_object.errors, :status => :unprocessable_entity
         end
-      rescue ActiveRecord::RecordNotFound => e
-        render :xml => e.to_xml, :status => :not_found
-      rescue ActiveRecord::RecordInvalid => e
-        render :xml => e.to_xml, :status => :unprocessable_entity
+      rescue ActiveRecord::RecordNotFound, ActiveResource::ResourceNotFound => e
+        handle_not_found_error_in_xml(e)
+      rescue ActiveRecord::RecordInvalid, ActiveResource::ResourceInvalid => e
+        handle_invalid_error_in_xml(e)
       rescue => e
         handle_generic_error_in_xml(e)
       end
 
       private
+      def handle_not_found_error_in_xml(exception)
+        logger.error exception
+        render :xml => exception, :status => :not_found
+      end
+
+      def handle_invalid_error_in_xml(exception)
+        logger.error exception
+        render :xml => exception, :status => :unprocessable_entity
+      end
+
       def handle_generic_error_in_xml(exception)
         logger.error exception
         render :xml => exception, :status => :internal_server_error

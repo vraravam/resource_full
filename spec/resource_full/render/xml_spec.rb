@@ -13,7 +13,7 @@ describe "ResourceFull::Render::XML" , :type => :controller do
         response_hash.size.should == 2
       end
     end
-    
+
     describe "show" do
       it "renders the model object" do
         record = ResourceFullSpec::ResourceFullNamespacedMockRecord.create!
@@ -23,7 +23,25 @@ describe "ResourceFull::Render::XML" , :type => :controller do
         response.code.should == '200'
         response.body.should have_tag("resource-full-namespaced-mock-record")
       end
+
+      it "should render errors if the ARecord was not found" do
+        get :show, :id => "fooBar", :format => 'xml'
+
+        response.code.should == '404'
+        response.body.should == "<errors><error>Couldn't find ResourceFullSpec::ResourceFullNamespacedMockRecord with id=fooBar</error></errors>"
+      end
+
+      it "should render errors if the AResource was not found" do
+        expected_message = "<errors><error>Couldn't find ResourceFullSpec::ResourceFullNamespacedMockRecord with id=fooBar</error></errors>"
+        ResourceFullSpec::ResourceFullNamespacedMockRecord.expects(:find).raises(ActiveResource::ResourceNotFound, expected_message)
+
+        get :show, :id => "fooBar", :format => 'xml'
+
+        response.code.should == '404'
+        response.body.should == expected_message
+      end
     end
+
     describe "new" do
       it "renders the XML for a new model object" do
         get :new, :format => 'xml'
@@ -53,6 +71,23 @@ describe "ResourceFull::Render::XML" , :type => :controller do
 
         response.headers['Location'].should == resource_full_namespaced_mock_record_url(ResourceFullSpec::ResourceFullNamespacedMockRecord.find(:first), :format => :xml)
       end
+
+      it "should render errors if the ARecord creation failed with ActiveRecord::RecordInvalid" do
+        put :create, :resource_full_namespaced_mock_record => {:foo => "bar"}, :format => 'xml'
+
+        response.code.should == '422'
+        response.body.should == "<errors><error>unknown attribute: foo</error></errors>"
+      end
+
+      it "should render errors if the AResource was not found" do
+        expected_message = "<errors><error>Couldn't find ResourceFullSpec::ResourceFullNamespacedMockRecord with id=fooBar</error></errors>"
+        ResourceFullSpec::ResourceFullNamespacedMockRecord.expects(:create).raises(ActiveResource::ResourceNotFound, expected_message)
+
+        put :create, :resource_full_namespaced_mock_record => {}, :format => 'xml'
+
+        response.code.should == '422'
+        response.body.should == expected_message
+      end
     end
 
     describe "update" do
@@ -66,6 +101,44 @@ describe "ResourceFull::Render::XML" , :type => :controller do
           with_tag "name", "the new name"
         end
       end
+    end
+
+    it "should render errors if the ARecord was not found" do
+      put :update, :id => "fooBar", :format => 'xml', :resource_full_namespaced_mock_record => {:name => 'the new name'}
+
+      response.code.should == '404'
+      response.body.should == "<errors><error>Couldn't find ResourceFullSpec::ResourceFullNamespacedMockRecord with id=fooBar</error></errors>"
+    end
+
+    it "should render errors if the AResource was not found" do
+      record = ResourceFullSpec::ResourceFullNamespacedMockRecord.create!
+      expected_message = "<errors><error>Couldn't find ResourceFullSpec::ResourceFullNamespacedMockRecord with id=fooBar</error></errors>"
+      ResourceFullSpec::ResourceFullNamespacedMockRecord.any_instance.expects(:save).raises(ActiveResource::ResourceNotFound, expected_message)
+
+      put :update, :id => record.id, :format => 'xml', :resource_full_namespaced_mock_record => {:name => 'the new name'}
+
+      response.code.should == '404'
+      response.body.should == expected_message
+    end
+
+    it "should render errors if the ARecord updation failed with ActiveRecord::RecordInvalid" do
+      record = ResourceFullSpec::ResourceFullNamespacedMockRecord.create!
+
+      put :update, :id => record.id, :format => 'xml', :resource_full_namespaced_mock_record => {:name => 'the new name', :foo => "bar"}
+
+      response.code.should == '422'
+      response.body.should == "<errors><error>unknown attribute: foo</error></errors>"
+    end
+
+    it "should render errors if the ARecord updation failed with ActiveResource::ResourceInvalid" do
+      record = ResourceFullSpec::ResourceFullNamespacedMockRecord.create!
+      expected_message = "<errors><error>Couldn't find ResourceFullSpec::ResourceFullNamespacedMockRecord with id=fooBar</error></errors>"
+      ResourceFullSpec::ResourceFullNamespacedMockRecord.any_instance.expects(:save).raises(ActiveResource::ResourceInvalid, expected_message)
+
+      put :update, :id => record.id, :format => 'xml', :resource_full_namespaced_mock_record => {:name => 'the new name'}
+
+      response.code.should == '422'
+      response.body.should == expected_message
     end
   end
 
@@ -137,7 +210,6 @@ describe "ResourceFull::Render::XML" , :type => :controller do
   end
 
   describe ResourceFullMockUsersController do
-
     class SomeNonsenseException < Exception; end
 
     before :each do
@@ -360,6 +432,22 @@ describe "ResourceFull::Render::XML" , :type => :controller do
         ResourceFullMockUser.send :define_method, :destroy do
           errors.add_to_base("Cannot delete")
           raise ActiveRecord::RecordInvalid.new(self)
+        end
+
+        begin
+          delete :destroy, :id => mock_user.id.to_s, :format => 'xml'
+
+          response.code.should == '422'
+          response.should have_tag("errors") { with_tag("error", /Cannot delete/) }
+        ensure
+          ResourceFullMockUser.send :remove_method, :destroy
+        end
+      end
+
+      it "renders appropriate errors if ResourceInvalid exception is raised" do
+        mock_user = ResourceFullMockUser.create!
+        ResourceFullMockUser.send :define_method, :destroy do
+          raise ActiveResource::ResourceInvalid.new("Cannot delete")
         end
 
         begin

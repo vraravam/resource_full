@@ -12,14 +12,14 @@ module ResourceFull
       end
       def show_json
         self.model_object = self.find_model_object
-        
+
         json_representation = with_root_included_in_json do
           model_object.to_json(show_json_options)
         end
-        
+
         render :json => json_representation
-      rescue ActiveRecord::RecordNotFound => e
-        render :json => e.to_json, :status => :not_found
+      rescue ActiveRecord::RecordNotFound, ActiveResource::ResourceNotFound => e
+        handle_not_found_error_in_json(e)
       rescue => e
         handle_generic_error_in_json(e)
       end
@@ -29,11 +29,11 @@ module ResourceFull
       end
       def index_json
         self.model_objects = self.find_all_model_objects
-        
+
         json_representation = with_root_included_in_json do
           model_objects.to_json(index_json_options)
         end
-        
+
         render :json => json_representation
       end
 
@@ -49,7 +49,7 @@ module ResourceFull
         json_representation = with_root_included_in_json do
           self.new_model_object.to_json(new_json_options)
         end
-        
+
         render :json => json_representation
       end
 
@@ -66,6 +66,8 @@ module ResourceFull
                                :full_messages => model_object.errors.full_messages}
           render :json => {json_class_name(model_object) => json_data}.to_json, :status => http_error_code_for(model_object.errors)
         end
+      rescue ActiveRecord::RecordInvalid, ActiveResource::ResourceInvalid => e
+        handle_invalid_error_in_json(e)
       rescue => e
         handle_generic_error_in_json(e)
       end
@@ -90,8 +92,10 @@ module ResourceFull
                                :full_messages => model_object.errors.full_messages}
           render :json => {json_class_name(model_object) => json_data}.to_json, :status => http_error_code_for(model_object.errors)
         end
-      rescue ActiveRecord::RecordNotFound => e
-        render :json => e.to_json, :status => :not_found
+      rescue ActiveRecord::RecordNotFound, ActiveResource::ResourceNotFound => e
+        handle_not_found_error_in_json(e)
+      rescue ActiveRecord::RecordInvalid, ActiveResource::ResourceInvalid => e
+        handle_invalid_error_in_json(e)
       rescue => e
         handle_generic_error_in_json(e)
       end
@@ -106,27 +110,34 @@ module ResourceFull
                                :full_messages => model_object.errors.full_messages}
           render :json => {json_class_name(model_object) => json_data}.to_json, :status => :unprocessable_entity
         end
-      rescue ActiveRecord::RecordNotFound => e
-        render :json => e.to_json, :status => :not_found
-      rescue ActiveRecord::RecordInvalid => e
-        render :json => e.to_json, :status => :unprocessable_entity
+      rescue ActiveRecord::RecordNotFound, ActiveResource::ResourceNotFound => e
+        handle_not_found_error_in_json(e)
+      rescue ActiveRecord::RecordInvalid, ActiveResource::ResourceInvalid => e
+        handle_invalid_error_in_json(e)
       rescue => e
         handle_generic_error_in_json(e)
       end
 
       private
-      
-        def handle_generic_error_in_json(exception)
-          render :json => exception, :status => :internal_server_error
-        end
-      
-        def with_root_included_in_json
-          old_value = ActiveRecord::Base.include_root_in_json
-          ActiveRecord::Base.include_root_in_json = true
-          yield
-        ensure
-          ActiveRecord::Base.include_root_in_json = old_value
-        end
+      def handle_not_found_error_in_json(exception)
+        render :json => exception, :status => :not_found
+      end
+
+      def handle_invalid_error_in_json(exception)
+        render :json => exception, :status => :unprocessable_entity
+      end
+
+      def handle_generic_error_in_json(exception)
+        render :json => exception, :status => :internal_server_error
+      end
+
+      def with_root_included_in_json
+        old_value = ActiveRecord::Base.include_root_in_json
+        ActiveRecord::Base.include_root_in_json = true
+        yield
+      ensure
+        ActiveRecord::Base.include_root_in_json = old_value
+      end
     end
   end
 end
