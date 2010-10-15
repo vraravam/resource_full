@@ -57,6 +57,10 @@ module ResourceFull
         else
           render :xml => model_object.errors.to_xml, :status => http_error_code_for(model_object.errors)
         end
+      rescue ActiveRecord::RecordNotFound, ActiveResource::ResourceNotFound => e
+        handle_not_found_error_in_xml(e)
+      rescue ActiveRecord::RecordInvalid, ActiveResource::ResourceInvalid => e
+        handle_invalid_error_in_xml(e)
       rescue => e
         handle_generic_error_in_xml(e)
       end

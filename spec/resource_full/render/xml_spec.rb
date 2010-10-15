@@ -75,18 +75,31 @@ describe "ResourceFull::Render::XML" , :type => :controller do
       it "should render errors if the ARecord creation failed with ActiveRecord::RecordInvalid" do
         put :create, :resource_full_namespaced_mock_record => {:foo => "bar"}, :format => 'xml'
 
-        response.code.should == '422'
-        response.body.should == "<errors><error>unknown attribute: foo</error></errors>"
+        response.code.should == '500'
+        Hash.from_xml(response.body).should == {"errors" => {"error" => "unknown attribute: foo"}}
       end
 
       it "should render errors if the AResource was not found" do
-        expected_message = "<errors><error>Couldn't find ResourceFullSpec::ResourceFullNamespacedMockRecord with id=fooBar</error></errors>"
-        ResourceFullSpec::ResourceFullNamespacedMockRecord.expects(:create).raises(ActiveResource::ResourceNotFound, expected_message)
+        expected_message = "Couldn't find ResourceFullSpec::ResourceFullNamespacedMockRecord with id=fooBar"
+        ResourceFullSpec::ResourceFullNamespacedMockRecord.expects(:create).raises(ActiveResource::ResourceNotFound, "<errors><error>#{expected_message}</error></errors>")
 
         put :create, :resource_full_namespaced_mock_record => {}, :format => 'xml'
 
-        response.code.should == '422'
-        response.body.should == expected_message
+        response.code.should == '404'
+        Hash.from_xml(response.body).should == {"errors" => {"error" => expected_message}}
+      end
+
+      it "should render errors if a generic error was raised" do
+        expected_message = "some generic error"
+        response = mock("response")
+        response.stubs(:code).returns('500')
+        response.stubs(:body).returns("<errors><error>#{expected_message}</error></errors>")
+        ResourceFullSpec::ResourceFullNamespacedMockRecord.expects(:create).raises(ActiveResource::ConnectionError.new(response))
+
+        put :create, :resource_full_namespaced_mock_record => {}, :format => 'xml'
+
+        response.code.should == '500'
+        Hash.from_xml(response.body).should == {"errors" => {"error" => expected_message}}
       end
     end
 
@@ -126,8 +139,8 @@ describe "ResourceFull::Render::XML" , :type => :controller do
 
       put :update, :id => record.id, :format => 'xml', :resource_full_namespaced_mock_record => {:name => 'the new name', :foo => "bar"}
 
-      response.code.should == '422'
-      response.body.should == "<errors><error>unknown attribute: foo</error></errors>"
+      response.code.should == '500'
+      Hash.from_xml(response.body).should == {"errors" => {"error" => "unknown attribute: foo"}}
     end
 
     it "should render errors if the ARecord updation failed with ActiveResource::ResourceInvalid" do

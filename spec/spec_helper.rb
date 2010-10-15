@@ -66,6 +66,7 @@ ActionController::Routing::Routes.draw do |map|
   map.resources :resource_full_namespaced_mock_record_with_xml_overrides
 end
 
+# TODO: Move these into config.before() so as to redefine the classes for each spec
 class ResourceFullMock
   def self.table_name; "mock"; end
 end
