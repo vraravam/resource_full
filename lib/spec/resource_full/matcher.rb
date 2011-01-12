@@ -1,5 +1,6 @@
 require 'spec/resource_full/matcher/expose_matcher'
 require 'spec/resource_full/matcher/identified_by_matcher'
+require 'spec/resource_full/matcher/queryable_with_matcher'
 
 module Spec
   module ResourceFull

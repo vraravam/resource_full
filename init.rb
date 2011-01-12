@@ -1,1 +1,1 @@
-require 'resource_full'
+require File.join(File.dirname(__FILE__), 'rails', 'init')
